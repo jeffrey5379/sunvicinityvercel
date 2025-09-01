@@ -1,15 +1,1367 @@
-<!doctype html>
-<html>
-    <head>
-        <meta charset="utf-8">
-		<meta name="google-site-verification" content="hEgOIFeSLeGWbktPzVpYLCCGKfKpZcbX94JEUWi1mOo" >
-        <title>Sun stellar neighborhood Nearby stars 3D</title>
-        <link rel="stylesheet" href="files/main.css">
-    </head>
-    <body>
-        <h1>Welcome to the Sun stellar neighborhood</h1>
-        <p>Click <a href="/model/sun_vicinity.html">here</a> to proceed to the main page</p>
-    </body>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Sun stellar neighborhood Nearby stars 3D</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
+    <meta
+      name="google-site-verification"
+      content="hEgOIFeSLeGWbktPzVpYLCCGKfKpZcbX94JEUWi1mOo"
+    />
+    <link type="text/css" rel="stylesheet" href="main.css" />
+  </head>
 
+  <body>
+    <div id="header">
+      <span id="state"></span>
+      <span id="info">Loading. Please wait.</span>
+    </div>
+
+    <script type="x-shader/x-vertex" id="vertexshader">
+      varying vec2 vUv;
+      void main() {
+      	vUv = uv;
+      	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      }
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragmentshader">
+      uniform sampler2D baseTexture;
+      uniform sampler2D bloomTexture;
+      varying vec2 vUv;
+
+      vec4 getTexture( sampler2D texelToLinearTexture ) {
+      	return mapTexelToLinear( texture2D( texelToLinearTexture , vUv ) );
+      }
+
+      void main() {
+      	gl_FragColor = ( getTexture( baseTexture ) + vec4( 1.0 ) * getTexture( bloomTexture ) );
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from "./build/three.module.js";
+      import { GUI } from "./jsm/libs/dat.gui.module.js";
+      import { OrbitControls } from "./jsm/controls/OrbitControls.js";
+      import { EffectComposer } from "./jsm/postprocessing/EffectComposer.js";
+      import { RenderPass } from "./jsm/postprocessing/RenderPass.js";
+      import { ShaderPass } from "./jsm/postprocessing/ShaderPass.js";
+      import { UnrealBloomPass } from "./jsm/postprocessing/UnrealBloomPass.js";
+      const zyw =
+        "Welcome to the vicinity of the Sun. Switch to exploratory mode to study the mechanics of the model or navigate between stars in free mode.";
+      const zxa =
+        "Your support is always welcome: bitcoin:bc1qn84vf2q68j78vxjmwjq87m8qhcxkhvtvfucca8";
+      const ztf = "Your feedback is always welcome: jeffrey3829@proton.me";
+      const zqi =
+        "Stars brightness and size not to scale. Do not consider as a source of reliable data. Please use Chrome for a better experience. This model has made use of the SIMBAD database, CDS, Strasbourg Astronomical Observatory, France.";
+      const zna =
+        "Looks like some constellations names are misplaced. Will you be able to find pairs of incorrectly named constellations? Click the constellations names which are out of place.";
+      const zlq = "        Well done! Let's put them in their place.";
+      const pnn = "                  No,these two are in place.";
+      const pir =
+        "            One of these two is misplaced. Take a closer look.";
+      const pcf =
+        "Hooray! Now all constellations are in place. The setting to hide/show constellations is available now.";
+      const oza =
+        "Let's find the most interesting neighboring stars. Use 'Go to Sun' if you got lost. ";
+      const oxg = [
+        "* alf CMa",
+        "* alf Lyr",
+        "* alf PsA",
+        "* alf Tau",
+        "* alf Boo",
+      ];
+      const oui = [
+        "The first stop is Sirius (Alpha CANIS MAJOR)",
+        "The next stop is Vega (Alpha LYRA)",
+        "Would you like to see Fomalhaut? (Alpha PISCIS AUSTRINUS)",
+        "Why not visit Aldebaran? (Alpha TAURUS)",
+        "The last destination is Arcturus (Alpha BOOTES)",
+      ];
+      const oru = [
+        "Sirius is the brightest star in the night sky. It's a binary star consisting of a main-sequence star Sirius A, and a faint white dwarf Sirius B.",
+        "Vega is the fifth-brightest star in the night sky and is only about a tenth of the age of the Sun.",
+        "Fomalhaut is a class A star on the main sequence approximately 25 light-years from the Sun.",
+        "Aldebaran is a red giant with a surface temperature of 3,900 K, it is over 400 times as luminous as the Sun.",
+        "Arcturus is a red giant of spectral type K, an aging star around 7.1 billion years old.",
+      ];
+      const ooz =
+        "Looks like it's time to visit nearest star clusters. Move with WASD. Use mouse panning to correct the direction and the compas to navigate. Zoom in to see the compass.";
+      const omi = ["HYADES", "PLEIADES", "BEEHIVE", "IC 2391", "NGC 3532"];
+      const ojt = [
+        " The first stop is HYADES cluster in Taurus",
+        " Next let's visit the PLEIADES cluster which is also in Taurus but a bit further",
+        " Now let's head to the BEEHIVE cluster in Cancer",
+        " The next stop is IC 2391 in Vela",
+        " And the last one is NGC 3532 in Carina",
+      ];
+      const oby = [
+        "The age of the Hyades is estimated to be about 625 million years. The core of the cluster, where stars are the most densely packed, has a radius of 8.8 light-years, and the cluster's tidal radius is 33 light-years.",
+        "The cluster is dominated by hot blue luminous stars that have formed within the last 100 million years. Astronomers estimate that the cluster will survive for approximately another 250 million years, after which the clustering will be lost due to gravitational interactions with the galactic neighborhood.",
+        "Age and proper motion of the Beehive Cluster coincide with those of the Hyades, suggesting they may share similar origins. Both clusters also contain red giants and white dwarfs, which represent later stages of stellar evolution, along with many main sequence stars.",
+        "IC 2391 is an open cluster in the constellation Vela consisting of hot, young, blueish stars, some of which binaries and one of which is a quadruple.",
+        "NGC 3532 is an open cluster in the constellation Carina. Its population of approximately 150 stars of 7th magnitude or fainter includes seven red giants and seven white dwarfs.",
+      ];
+      const nyd =
+        "Exploratory mode completed. Search by star name is available now. You can also use density setting to find interesting areas in Sun surroundings.";
+      const nwe = "Exploratory",
+        nug = "Free";
+      const nsr = {
+        nrv: "nrv",
+        non: "non",
+        nmk: "nmk",
+        njy: "njy",
+        ner: "ner",
+      };
+      const nax = { mzz: "mzz", myz: "myz", mxm: "mxm", muc: "muc" };
+      var ctn, dam, crw, dde;
+      const dfa = 1391400,
+        din = 0.01;
+      var dkk,
+        dly = 200,
+        dnw = 1500,
+        dqx = 10,
+        dsx = Math.PI / dly;
+      var dvr = (2 * Math.PI) / dnw,
+        dzv = 0,
+        ebd = 6;
+      var ecz = [],
+        edv = [],
+        eey = [],
+        ejo = [],
+        ems = [],
+        eqo = [],
+        etu = [],
+        eyb = [],
+        far = [];
+      var fcg = 0xffffff,
+        fdn = 0x1996af,
+        ffx = 0x161616,
+        rde = 0xff0000,
+        org = 0xcc6600,
+        yll = 0xffff00;
+      var fhu = false,
+        fis = false,
+        fld,
+        fmq,
+        fnv,
+        fqt,
+        fsu,
+        fur,
+        fwk,
+        fzt,
+        gbt;
+      var gdh = [],
+        geq = [],
+        gfv = [],
+        ghb = [],
+        gjm = [],
+        glq = [],
+        gny = [],
+        ttt = [];
+      var hbn = 240.0,
+        hcz = new THREE.Vector3(),
+        ooo = 500.0,
+        hfy = 80.0,
+        his = 40.0;
+      var hmi = new THREE.Vector3(),
+        hpj = new THREE.IcosahedronBufferGeometry(1, 4);
+      var hsu = 0,
+        huq = 30,
+        hzj,
+        icc;
+      var ieq = [],
+        ihm = [],
+        iky = [],
+        inc = [],
+        iom = [],
+        iqp = [],
+        ist = [],
+        ivu = [],
+        jay = [],
+        jhw = [],
+        jmt = [],
+        jvo;
+      const jyg = (millis) =>
+        new Promise((resolve, reject) => {
+          setTimeout((_) => resolve(), millis);
+        });
+      var kbi = new THREE.FontLoader();
+      kbi.load("urbanist_bold.json", function (kdp) {
+        jvo = kdp;
+      });
+      var params = {
+        exposure: ebd,
+        bloomStrength: 6,
+        bloomThreshold: 0,
+        bloomRadius: 1,
+        Mode: "Free",
+        showConstellations: false,
+        showDensity: false,
+        Info: "None",
+        Search: "",
+      };
+      var khb = new THREE.MeshBasicMaterial({ color: "black" });
+      var khm = {};
+      dde = new THREE.WebGLRenderer({ antialias: false });
+      dde.setPixelRatio(window.devicePixelRatio);
+      dde.setSize(window.innerWidth, window.innerHeight);
+      dde.toneMapping = THREE.ReinhardToneMapping;
+      dde.toneMappingExposure = ebd;
+      document.body.appendChild(dde.domElement);
+      const kjd = document.getElementById("state");
+      const kkj = document.getElementById("info");
+      var klv, koj;
+      ctn = new THREE.Scene();
+      dam = new THREE.PerspectiveCamera(
+        40,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        50000.0
+      );
+      dam.position.set(0, 0, 3);
+      dam.lookAt(0, 0, 0);
+      crw = new OrbitControls(dam, dde.domElement);
+      crw.minDistance = 0.5;
+      crw.maxDistance = 50000.0;
+      crw.enableKeys = false;
+      crw.enablePan = false;
+      crw.addEventListener("change", wup);
+      var kqp = new RenderPass(ctn, dam);
+      var kta = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        1.5,
+        0.4,
+        0.85
+      );
+      kta.threshold = params.bloomThreshold;
+      kta.strength = params.bloomStrength;
+      kta.radius = params.bloomRadius;
+      var kva = new EffectComposer(dde);
+      kva.renderToScreen = false;
+      kva.addPass(kqp);
+      kva.addPass(kta);
+      var kyr = new ShaderPass(
+        new THREE.ShaderMaterial({
+          uniforms: {
+            baseTexture: { value: null },
+            bloomTexture: { value: kva.renderTarget2.texture },
+          },
+          vertexShader: document.getElementById("vertexshader").textContent,
+          fragmentShader: document.getElementById("fragmentshader").textContent,
+          defines: {},
+        }),
+        "baseTexture"
+      );
+      kyr.needsSwap = true;
+      var lar = new EffectComposer(dde);
+      lar.addPass(kqp);
+      lar.addPass(kyr);
+      var ldg = new THREE.Raycaster(),
+        lgi = new THREE.Vector2();
+      window.addEventListener("mouseup", pol, false);
+      window.addEventListener("mousedown", pmf, false);
+      window.addEventListener("mousemove", oyi, false);
+      document.addEventListener("keydown", function (event) {
+        if (document.activeElement === lhq) {
+          return;
+        }
+        var liq, ljt, lmg;
+        if ([87, 83, 65, 68].includes(event.keyCode)) {
+          if (hsu < 6 || dkk != null) {
+            return;
+          }
+          liq = (dam.position.x - crw.target.x) / 100.0;
+          ljt = (dam.position.y - crw.target.y) / 100.0;
+          lmg = (dam.position.z - crw.target.z) / 100.0;
+          var ltz = Math.floor(
+            0.8 / Math.max(Math.abs(liq), Math.abs(ljt), Math.abs(lmg))
+          );
+          if (ltz > 0) {
+            liq *= ltz;
+            ljt *= ltz;
+            lmg *= ltz;
+          }
+        }
+        switch (event.keyCode) {
+          case 87:
+            liq = -liq;
+            ljt = -ljt;
+            lmg = -lmg;
+            break;
+          case 83:
+            break;
+          case 65:
+            ljt = 0.0;
+            var temp = liq;
+            liq = -lmg;
+            lmg = temp;
+            break;
+          case 68:
+            ljt = 0.0;
+            var temp = liq;
+            liq = lmg;
+            lmg = -temp;
+            break;
+        }
+        if ([87, 83, 65, 68].includes(event.keyCode)) {
+          var lwr = new THREE.Vector3(liq, ljt, lmg);
+          dam.position.add(lwr);
+          crw.target.add(lwr);
+          dam.lookAt(crw.target);
+          if (fqt != undefined && ctn.children.includes(fqt)) {
+            fqt.position.add(lwr);
+            fqt.lookAt(gjm[hsu - 6].center);
+          }
+          if (hmi.distanceTo(crw.target) > hfy / 4) {
+            xvn(crw.target, true);
+            xvn(crw.target, false);
+            hmi.copy(crw.target);
+            xmj();
+          }
+        }
+      });
+      var mcr = new GUI();
+      mcr.width = 300;
+      mcr
+        .add(params, "Mode", ["Free", "Exploratory"])
+        .onChange(function (value) {
+          switch (value) {
+            case "Free":
+              ukm(zyw);
+              break;
+            case "Exploratory":
+              if (hsu < 6) {
+                fhu = true;
+              }
+              pdu(true);
+              break;
+          }
+        });
+      mcr
+        .add(params, "showConstellations")
+        .name("Show constellations")
+        .onChange(function (value) {
+          mep(value);
+        });
+      mcr
+        .add(params, "showDensity")
+        .name("Show density")
+        .onChange(function (value) {
+          ggg(value);
+        });
+      function ggg(yyy) {
+        params.showDensity = yyy;
+        for (var rrr of ttt) {
+          if (yyy && rrr.position.distanceTo(crw.target) < ooo) {
+            ctn.add(rrr);
+          }
+          if (!yyy) {
+            ctn.remove(rrr);
+          }
+        }
+      }
+      function mep(mge) {
+        params.showConstellations = mge;
+        for (let mht of ejo) {
+          mht.visible = mge;
+        }
+        for (let mkn of eey) {
+          mkn.visible = mge;
+        }
+      }
+      function mnj() {
+        return eey.filter((name) => name.pzd != null).length;
+      }
+      var mpp = {
+        goToSun: function () {
+          if (crw.position != gbt.position) {
+            rmv(gbt);
+          }
+        },
+      };
+      mcr.add(mpp, "goToSun").name("Go to Sun");
+      mcr.add(params, "Search").onFinishChange(function (msi) {
+        var mro = far.find((mts) => mts.name == msi);
+        if (mro == null) {
+          var mvn = ghb.find((mwp) => mwp.name == msi);
+          if (mvn != null) {
+            mro = far.find((mxe) => mxe.name == mvn.code);
+          }
+        }
+        if (mro != null) {
+          fur = mro.name;
+          rmv(mro);
+        } else {
+          ukm("Nothing found", 3000);
+        }
+        this.setValue("");
+      });
+      mcr
+        .add(params, "Info", ["None", "About", "Feedback", "Support"])
+        .onChange(function (value) {
+          switch (value) {
+            case "None":
+              if (params.Mode == nwe) {
+                pdu();
+              } else {
+                ukm(zyw);
+              }
+              break;
+            case "About":
+              ukm(zqi);
+              break;
+            case "Feedback":
+              ukm(ztf);
+              break;
+            case "Support":
+              ukm(zxa);
+              break;
+          }
+        });
+      var lhq = document.querySelector(".c>input[type=text]");
+      var myl = document
+        .evaluate(
+          "//li[div[span[text()='Show constellations']]]",
+          document,
+          null,
+          XPathResult.ANY_TYPE,
+          null
+        )
+        .iterateNext();
+      myl.classList.add("hidden");
+      var eee = document
+        .evaluate(
+          "//li[div[span[text()='Show density']]]",
+          document,
+          null,
+          XPathResult.ANY_TYPE,
+          null
+        )
+        .iterateNext();
+      eee.classList.add("hidden");
+      var mzq = document
+        .evaluate(
+          "//li[div[span[text()='Search']]]",
+          document,
+          null,
+          XPathResult.ANY_TYPE,
+          null
+        )
+        .iterateNext();
+      mzq.classList.add("hidden");
+      await ngy();
+      await nlx();
+      await oao();
+      await rzk();
+      naj();
+      function naj() {
+        setTimeout(function () {
+          requestAnimationFrame(naj);
+        }, 15);
+        wup();
+      }
+      function ncn(nfb) {
+        for (let ndj of gfv) {
+          for (let neb of ndj["types"]) {
+            if (nfb.startsWith(neb)) {
+              return ndj["rgb"];
+            }
+          }
+        }
+        console.warn("Cannot determine colour for spectral type: " + nfb);
+        return [0.0, 0.9, 0.0];
+      }
+      function ngy() {
+        fetch("../files/wub.txt")
+          .then((res) => res.text())
+          .then((text) => {
+            for (let colour of text.split("\n")) {
+              var nhv = colour.split("|"),
+                niu = nhv[0].split(" "),
+                njr = nhv[1].split(" "),
+                nla = {};
+              nla["types"] = niu;
+              nla["rgb"] = njr;
+              gfv.push(nla);
+            }
+          })
+          .catch((e) => console.error(e));
+      }
+      function nlx() {
+        fetch("../files/efs.txt")
+          .then((res) => res.text())
+          .then((text) => {
+            for (let nnu of text.split("\n")) {
+              var nne = nnu.split("|"),
+                npi = {};
+              npi.code = nne[0];
+              npi.name = nne[1];
+              ghb.push(npi);
+            }
+          })
+          .catch((e) => console.error(e));
+      }
+      function oao() {
+        fetch("../files/baz.txt")
+          .then((res) => res.text())
+          .then((text) => {
+            for (let otg of text.split("\n")) {
+              var obf = otg.split("|"),
+                obr = obf[1].split(" "),
+                ocu = obf[2],
+                okn = obf[3].split(" "),
+                omu = uwn(obf[0], 1.0, crw.target);
+              omu.position.setFromSphericalCoords(ocu, obr[0], obr[1]);
+              omu.apptype = nsr.njy;
+              omu.name = obf[0];
+              omu.center = new THREE.Vector3();
+              omu.center.setFromSphericalCoords(ocu, okn[0], okn[1]);
+              var oph = new THREE.Vector3();
+              oph.y = omu.position.y;
+              omu.lookAt(oph);
+              etu.push(...omu.children);
+              gjm.push(omu);
+            }
+          })
+          .catch((e) => console.error(e));
+      }
+      function oyi(event) {
+        event.preventDefault();
+        lgi.x = (event.clientX / window.innerWidth) * 2 - 1;
+        lgi.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        ldg.setFromCamera(lgi, dam);
+        var paj = ldg.intersectObjects(ctn.children);
+        if (paj.length > 0 && !dkk && paj[0].object.text != undefined) {
+          var pca = paj[0].object;
+          if (pca != fwk) {
+            uos(pca.name);
+          }
+        } else {
+          uos("");
+        }
+      }
+      function pdu(pfl) {
+        if (params.Mode == "Free") {
+          if (pfl) {
+            uhm(zyw);
+          } else {
+            ukm(zyw);
+          }
+        } else {
+          switch (hsu) {
+            case 0:
+              if (pfl) {
+                uhm(zna + "(" + mnj() + "/10 left)");
+              } else {
+                ukm(zna + "(" + mnj() + "/10 left)");
+              }
+              rmv(gbt);
+              mep(true);
+              break;
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+              ukm(oza + oui[hsu - 1]);
+              break;
+            case 6:
+              phb(true);
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+              fis = true;
+              ukm(ooz + ojt[hsu - 6]);
+              break;
+            case 11:
+              phb(false);
+              fis = false;
+              mzq.classList.remove("hidden");
+              eee.classList.remove("hidden");
+              uhm(nyd);
+          }
+        }
+      }
+      function phb(pik) {
+        if (pik) {
+          var pjp = new THREE.CylinderBufferGeometry(0, 0.03, 0.15, 24);
+          pjp.rotateX(Math.PI / 2);
+          var pky = new THREE.MeshBasicMaterial({ color: ffx });
+          fqt = new THREE.Mesh(pjp, pky);
+          fqt.position.x = crw.target.x;
+          fqt.position.y = crw.target.y + 0.5;
+          fqt.position.z = crw.target.z;
+          fqt.lookAt(gjm[hsu - 6].center);
+          ctn.add(fqt);
+        } else {
+          ctn.remove(fqt);
+        }
+      }
+      function pmf(event) {
+        hzj = event.clientX;
+        icc = event.clientY;
+        uos("");
+      }
+      async function pol(event) {
+        if (!lhq.contains(event.target)) {
+          lhq.blur();
+        }
+        event.preventDefault();
+        var ppj = 0,
+          pqo;
+        lgi.x = (event.clientX / window.innerWidth) * 2 - 1;
+        lgi.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        if (
+          Math.abs(hzj - event.clientX) > 5 ||
+          Math.abs(icc - event.clientY) > 5
+        ) {
+          return;
+        }
+        ldg.setFromCamera(lgi, dam);
+        var pry = ldg.intersectObjects(ctn.children);
+        var ptz =
+          pry.length > 0 && pry.every((obj) => obj.object.apptype == nsr.nrv);
+        if (
+          pry.length > 1 &&
+          pry[0].object.position.distanceTo(dam.position) < 0.1
+        ) {
+          pqo = pry[1].object;
+        }
+        if (fhu && (pry.length == 0 || ptz)) {
+          pry = ldg.intersectObjects(eqo);
+        }
+        if (fis && pry.length == 0) {
+          pry = ldg.intersectObjects(etu);
+        }
+        if (
+          pry.length > 0 &&
+          dkk == null &&
+          (pry[0].object.apptype != undefined ||
+            pry[0].object.parent.apptype != undefined)
+        ) {
+          if (pqo == undefined) {
+            pqo = pry[0].object;
+          }
+          if (
+            (pqo.position.distanceTo(dam.position) < 0.3 ||
+              pqo.apptype == nsr.nrv) &&
+            pry.length > 1
+          ) {
+            for (var i = 1; i < pry.length; i++) {
+              if (pqo.apptype == nsr.nrv) {
+                pqo = pry[i].object;
+              } else {
+                break;
+              }
+            }
+          }
+          if (
+            pqo == undefined ||
+            pqo.apptype == nsr.nrv ||
+            pqo.apptype == nsr.ner
+          ) {
+            return;
+          }
+          dzv = 0;
+          if (pqo.type === "Line" && pqo.parent.apptype == nsr.non && fhu) {
+            pqo.material.color.setHex(fdn);
+            if (fmq == null) {
+              fmq = pqo.parent;
+            } else {
+              fnv = pqo.parent;
+              await jyg(1000);
+              if (fnv == fmq) {
+                return;
+              }
+              if (fnv.pzd != null && fnv.pzd == fmq.pzd) {
+                ukm(zlq);
+                var pxy = (fnv.position.x + fmq.position.x) / 2,
+                  pzt = (fnv.position.y + fmq.position.y) / 2,
+                  qay = (fnv.position.z + fmq.position.z) / 2;
+                const puv = new THREE.QuadraticBezierCurve3(
+                  fnv.position,
+                  new THREE.Vector3(
+                    (3 * pxy) / 4,
+                    (5 * pzt) / 4,
+                    (3 * qay) / 4
+                  ),
+                  fmq.position
+                );
+                gdh = puv.getPoints(dly);
+                const pwv = new THREE.QuadraticBezierCurve3(
+                  fnv.position,
+                  new THREE.Vector3(
+                    (5 * pxy) / 4,
+                    (3 * pzt) / 4,
+                    (5 * qay) / 4
+                  ),
+                  fmq.position
+                );
+                geq = pwv.getPoints(dly);
+                dkk = nax.myz;
+              } else {
+                if (fnv.pzd != null || fmq.pzd != null) {
+                  ukm(pir, 5000);
+                } else {
+                  ukm(pnn, 5000);
+                }
+                fmq.children[0].material.color.setHex(fcg);
+                fnv.children[0].material.color.setHex(fcg);
+                fmq = undefined;
+                fnv = undefined;
+              }
+            }
+            return;
+          }
+          if (pqo.type === "Line" && pqo.parent.apptype == nsr.njy && fis) {
+            if (
+              pqo.parent.visited ||
+              dam.position.distanceTo(pqo.parent.position) > his
+            ) {
+              return;
+            }
+            if (pqo.parent.name != omi[hsu - 6]) {
+              return;
+            }
+            fld = params.showConstellations;
+            mep(false);
+            dkk = nax.mxm;
+            crw.enabled = false;
+            ctn.remove(fqt);
+            pqo.material.color.setHex(fdn);
+            pry = pry.filter((line) => line.object.parent.apptype == nsr.njy);
+            fzt = pry[0].object.parent;
+            var qai = fzt.center;
+            fzt.visited = true;
+            var qco = new THREE.Vector3();
+            qco.copy(qai);
+            var qdu = Math.max(Math.abs(qco.x), Math.abs(qco.z));
+            var qfh = (qdu - 30) / qdu;
+            qco.x *= qfh;
+            qco.y += dqx;
+            qco.z *= qfh;
+            var qhc = crw.target.x,
+              qma = crw.target.y,
+              qns = crw.target.z,
+              qhx = qai.x,
+              qtn = qai.y,
+              qqs = qai.z,
+              qjc = dam.position.x,
+              qse = dam.position.y,
+              qpl = dam.position.z,
+              qjr = qco.x,
+              quo = qco.y,
+              qwi = qco.z;
+            var qyg = 0.0;
+            for (let i = 0; i < dly; i++) {
+              inc[i] = (Math.PI * (qjr - qjc) * Math.sin(qyg)) / (2 * dly);
+              iom[i] = (Math.PI * (quo - qse) * Math.sin(qyg)) / (2 * dly);
+              iqp[i] = (Math.PI * (qwi - qpl) * Math.sin(qyg)) / (2 * dly);
+              ist[i] = (Math.PI * (qhx - qhc) * Math.sin(qyg)) / (2 * dly);
+              ivu[i] = (Math.PI * (qtn - qma) * Math.sin(qyg)) / (2 * dly);
+              jay[i] = (Math.PI * (qqs - qns) * Math.sin(qyg)) / (2 * dly);
+              qyg = qyg + dsx;
+            }
+            var rao = new THREE.Vector3();
+            rao.copy(qco);
+            rao.y -= dqx;
+            var rco = rao.distanceTo(qai);
+            qyg = Math.atan(qai.x / qai.z) + Math.PI / 2;
+            var rei = Math.sign(qai.x),
+              rgq = Math.sign(qai.z);
+            for (let i = 0; i < dnw; i++) {
+              jhw[i] = rgq * rei * rco * Math.cos(qyg);
+              jmt[i] = -rgq * rco * Math.sin(qyg);
+              qyg = qyg - dvr;
+            }
+            return;
+          }
+          rmv(pqo);
+          wup();
+        }
+      }
+      window.onresize = function () {
+        var ria = window.innerWidth,
+          rjn = window.innerHeight;
+        dam.aspect = ria / rjn;
+        dam.updateProjectionMatrix();
+        dde.setSize(ria, rjn);
+        kva.setSize(ria, rjn);
+        lar.setSize(ria, rjn);
+        wup();
+      };
+      function rmv(rxq) {
+        var rny = crw.target.x,
+          rqj = crw.target.y,
+          rsp = crw.target.z,
+          rop = rxq.position.x,
+          rrl = rxq.position.y,
+          rui = rxq.position.z;
+        dkk = nax.mzz;
+        if (fwk != undefined) {
+          ush(fwk, false);
+        }
+        xvn(rxq.position, true);
+        var rwg = 0.0;
+        for (let i = 0; i < dly; i++) {
+          ieq[i] = (Math.PI * (rop - rny) * Math.sin(rwg)) / (2 * dly);
+          ihm[i] = (Math.PI * (rrl - rqj) * Math.sin(rwg)) / (2 * dly);
+          iky[i] = (Math.PI * (rui - rsp) * Math.sin(rwg)) / (2 * dly);
+          rwg = rwg + dsx;
+        }
+        if (
+          dam.position.distanceTo(rxq.position) > 0.1 &&
+          rxq.text != undefined
+        ) {
+          ush(rxq, true);
+        }
+        if (rxq.apptype == nsr.nmk) {
+          fwk = rxq;
+        }
+      }
+      async function rzk() {
+        ctn.traverse(wtk);
+        ctn.children.length = 0;
+        const sbe = new THREE.LineBasicMaterial({ color: ffx });
+        vrj();
+        var urls = [];
+        for (var i = 1; i <= 12; i++) {
+          urls.push("../files/ydf" + i + ".txt");
+        }
+        const requests = urls.map((url) => fetch(url));
+        await Promise.all(requests)
+          .then((responses) => {
+            const text = responses.map((res) => res.text());
+            return Promise.all(text);
+          })
+          .then((data) => {
+            var allText = data.reduce((txt1, txt2) => {
+              return txt1 + txt2;
+            });
+            var sdj = allText.split("\n"),
+              sfd = new THREE.Vector3();
+            for (let shn of sdj) {
+              var sgf = {};
+              sgf.name = shn.split("|")[0];
+              sgf.data = shn;
+              sgf.position = tby(shn);
+              far.push(sgf);
+              if (sgf.position.distanceTo(sfd) < hbn || sxe(sgf.name)) {
+                var sio = tko(shn);
+                for (let sju of ecz) {
+                  for (let skv of sju) {
+                    if (skv.name === sio.name) {
+                      skv.position = sio.position;
+                    }
+                  }
+                }
+                ems.push(sio);
+                if (hfy > crw.target.distanceTo(sio.position)) {
+                  ctn.add(sio);
+                }
+              }
+            }
+            for (let smc of ecz) {
+              const snh = [];
+              for (let sok of smc) {
+                if (sok.position.x === undefined) {
+                  console.warn(sok.name + " data is missing");
+                }
+                snh.push(sok.position);
+              }
+              edv.push(snh);
+              var spd = new THREE.BufferGeometry().setFromPoints(snh);
+              var sqj = new THREE.Line(spd, sbe);
+              sqj.visible = false;
+              sqj.shine = false;
+              sqj.apptype = nsr.nrv;
+              ejo.push(sqj);
+              ctn.add(sqj);
+            }
+            ush(fwk, true);
+          })
+          .catch((e) => console.error(e));
+        pdu(true);
+        ppp();
+        stj();
+        wup();
+      }
+      function ppp() {
+        var csz = 100.0,
+          fto = 2000.0,
+          mtr = new Array(40);
+        for (let i = 0; i < 40; i++) {
+          mtr[i] = new Array(40);
+          for (let j = 0; j < 40; j++) {
+            mtr[i][j] = new Array(40).fill(0);
+          }
+        }
+        for (var jjj of far) {
+          if (jjj.position.distanceTo(gbt.position) < fto) {
+            var lll = Math.floor(jjj.position.x / csz) + 20;
+            var gbp = Math.floor(jjj.position.y / csz) + 20;
+            var xlp = Math.floor(jjj.position.z / csz) + 20;
+            mtr[lll][gbp][xlp] += 1;
+          }
+        }
+        for (let i = 0; i < 40; i++) {
+          for (let j = 0; j < 40; j++) {
+            for (let k = 0; k < 40; k++) {
+              var pti = new THREE.Vector3();
+              pti.x = (i - 20) * csz + csz / 2;
+              pti.y = (j - 20) * csz + csz / 2;
+              pti.z = (k - 20) * csz + csz / 2;
+              var clr =
+                mtr[i][j][k] > 2000
+                  ? rde
+                  : mtr[i][j][k] > 1500
+                  ? org
+                  : mtr[i][j][k] > 1000
+                  ? yll
+                  : fcg;
+              if (mtr[i][j][k] != 0) {
+                var utr = uwn(mtr[i][j][k] + "", 4.0, pti, clr);
+                ttt.push(utr);
+              }
+            }
+          }
+        }
+      }
+      function stj() {
+        var suo = new THREE.MeshBasicMaterial({ color: 0x100500 });
+        var svq = new THREE.Mesh(hpj, suo);
+        svq.position.setFromSphericalCoords(26000, 2.07, 4.64);
+        svq.scale.setScalar(50.0);
+        svq.name = "Sagittarius A*";
+        svq.apptype = nsr.ner;
+        ctn.add(svq);
+      }
+      function sxe(taq) {
+        for (let syd of ecz) {
+          for (let szp of syd) {
+            if (szp.name === taq) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+      function tby(tdr) {
+        var teo = tdr.split("|"),
+          tfx = wnu(teo[3]),
+          tgz = teo[2].split(" "),
+          tii = wrb(tgz[0]),
+          tjd = wrb(tgz[1]);
+        return new THREE.Vector3().setFromSphericalCoords(
+          tfx,
+          Math.PI / 2 - tjd,
+          tii
+        );
+      }
+      function tko(tno) {
+        var tmg = tno.split("|"),
+          tpm = new THREE.Color(),
+          trt = tmg[0],
+          tts = tmg[4];
+        tpm.setHex(ncn(tts));
+        var tuv = new THREE.MeshBasicMaterial({ color: tpm }),
+          twd = new THREE.Mesh(hpj, tuv),
+          txk = wnu(tmg[3]);
+        if (tmg[0] === "Sun") {
+          txk = 0.0;
+          gbt = twd;
+          fwk = twd;
+        }
+        var tzb = tmg[2].split(" "),
+          uao = wrb(tzb[0]),
+          ubs = wrb(tzb[1]);
+        twd.position.setFromSphericalCoords(txk, Math.PI / 2 - ubs, uao);
+        twd.name = trt;
+        var ucx = ghb.find((ufu) => ufu.code == trt);
+        if (ucx != null) {
+          twd.secondName = ucx.name;
+        }
+        var uel = tmg[5];
+        if (uel !== undefined && uel.length != 0) {
+          if (uel.endsWith("km")) {
+            uel = Number(uel.split(" ")[0] / dfa);
+          } else if (uel.endsWith("mas")) {
+            uel = Number(uel.split(" ")[0]);
+          } else {
+            uel = "NA";
+          }
+        } else {
+          uel = "NA";
+        }
+        if (uel == "NA") {
+          twd.scale.setScalar(din);
+        } else {
+          twd.scale.setScalar(din * Math.pow(uel, 0.25));
+        }
+        twd.shine = true;
+        twd.apptype = nsr.nmk;
+        twd.ijz = twd.scale.x;
+        twd.text =
+          txk.toFixed(0) +
+          " ly. Type " +
+          tmg[1] +
+          " Class " +
+          tts +
+          (typeof uel == "number" && uel.toFixed(0) > 1
+            ? ". " + uel.toFixed(0) + " Sun radii"
+            : "");
+        if (twd == gbt) {
+          twd.text = "Class " + tts;
+        }
+        return twd;
+      }
+      async function uhm(uiu) {
+        fsu = uiu;
+        for (var i = 0; i <= uiu.length; i++) {
+          kkj.innerText = uiu.substring(0, i);
+          await jyg(huq);
+          if (uiu != fsu) {
+            break;
+          }
+        }
+      }
+      async function ukm(uls, umt) {
+        if (!klv) {
+          koj = kkj.innerText;
+        }
+        kkj.innerText = uls;
+        if (umt) {
+          klv = true;
+          await jyg(umt);
+          kkj.innerText = koj;
+          klv = false;
+        }
+      }
+      function uos(uqn) {
+        kjd.innerText = uqn;
+      }
+      function ush(utj, uvc) {
+        if (!uvc) {
+          ctn.remove(utj.labelPrimary);
+          ctn.remove(utj.labelSecondary);
+        } else {
+          if (utj.apptype != nsr.ner) {
+            var position = new THREE.Vector3(
+              utj.position.x + 3 * utj.ijz,
+              utj.position.y,
+              utj.position.z
+            );
+            var name =
+              utj.secondName != undefined
+                ? utj.secondName + " (" + utj.name + ")"
+                : utj.name;
+            utj.labelPrimary = uwn(name, 0.02, position);
+            ctn.add(utj.labelPrimary);
+            position.y -= 0.015;
+            utj.labelSecondary = uwn(utj.text, 0.005, position);
+            ctn.add(utj.labelSecondary);
+          }
+        }
+      }
+      function uwn(uya, uzf, vaw, ujm) {
+        var mww = ujm == undefined ? fcg : ujm;
+        var vbq = new THREE.LineBasicMaterial({
+          color: mww,
+          side: THREE.DoubleSide,
+        });
+        var vci = jvo.generateShapes(uya, uzf);
+        var vdg = [];
+        for (var i = 0; i < vci.length; i++) {
+          var vil = vci[i];
+          if (vil.holes && vil.holes.length > 0) {
+            for (var j = 0; j < vil.holes.length; j++) {
+              var hole = vil.holes[j];
+              vdg.push(hole);
+            }
+          }
+        }
+        vci.push.apply(vci, vdg);
+        var label = new THREE.Object3D();
+        for (var i = 0; i < vci.length; i++) {
+          var vil = vci[i],
+            vjp = vil.getPoints(),
+            vke = new THREE.BufferGeometry().setFromPoints(vjp),
+            vlf = new THREE.Line(vke, vbq);
+          label.add(vlf);
+        }
+        label.position.copy(vaw);
+        return label;
+      }
+      function vrj() {
+        fetch("../files/guz.txt")
+          .then((res) => res.text())
+          .then((text) => {
+            for (let vst of text.split("\n")) {
+              var vtt = [];
+              for (let vux of vst.split("|")) {
+                var vwq = {};
+                vwq.name = vux;
+                vwq.position = {};
+                vtt.push(vwq);
+              }
+              ecz.push(vtt);
+            }
+          })
+          .catch((e) => console.error(e));
+        fetch("../files/psu.txt")
+          .then((res) => res.text())
+          .then((text) => {
+            var vxv = [];
+            for (let vyv of text.split("\n")) {
+              var wap = vyv.split("|");
+              var coord = wap[1].split(" "),
+                wbt = uwn(wap[0], 0.4, crw.target);
+              wbt.position.setFromSphericalCoords(30, coord[0], coord[1]);
+              wbt.visible = false;
+              wbt.apptype = nsr.non;
+              wbt.pzd = wap[2];
+              wbt.conName = wap[0];
+              wbt.lookAt(crw.target);
+              if (wbt.pzd) {
+                vxv.push(wbt);
+              }
+              eqo.push(...wbt.children);
+              eey.push(wbt);
+              ctn.add(wbt);
+            }
+            while (vxv.length > 0) {
+              var wcz = vxv[0];
+              for (let wef of vxv) {
+                if (wcz != wef && wcz.pzd == wef.pzd) {
+                  wgo(wcz, wef);
+                  vxv = vxv.filter((label) => label.pzd != wcz.pzd);
+                }
+              }
+            }
+          })
+          .catch((e) => console.error(e));
+      }
+      function wgo(wjx, wlz) {
+        var wim = wjx.position.clone();
+        wjx.position.copy(wlz.position);
+        wlz.position.copy(wim);
+        wjx.lookAt(0.0, 0.0, 0.0);
+        wlz.lookAt(0.0, 0.0, 0.0);
+      }
+      function wnu(wpf) {
+        return 3261.56 / wpf;
+      }
+      function wrb(wsc) {
+        return (wsc * Math.PI) / 180.0;
+      }
+      function wtk(obj) {
+        if (obj.material) {
+          obj.material.dispose();
+        }
+      }
+      function wup() {
+        if (dkk == nax.mzz) {
+          var wvv = ieq[dzv],
+            wxb = ihm[dzv],
+            wyd = iky[dzv];
+          dzv++;
+          var wzz = new THREE.Vector3(wvv, wxb, wyd);
+          dam.position.add(wzz);
+          crw.target.add(wzz);
+          dam.lookAt(crw.target);
+          if (fqt != undefined && ctn.children.includes(fqt)) {
+            fqt.position.add(wzz);
+            fqt.lookAt(gjm[hsu - 6].center);
+          }
+          if (dzv >= dly) {
+            dkk = null;
+            xvn(fwk.position, false);
+            xmj();
+            dzv = 0;
+            if (params.Mode == nwe && fwk.name == oxg[hsu - 1]) {
+              uhm("Well done! " + oru[hsu - 1]);
+              var xkk = new Audio("../files/paz.mp3");
+              xkk.volume = 0.5;
+              xkk.play();
+              setTimeout(() => {
+                hsu++;
+                pdu();
+              }, 15000);
+            }
+          }
+        }
+        if (dkk == nax.myz) {
+          fmq.position.copy(gdh[dly - dzv]);
+          fnv.position.copy(geq[dzv]);
+          dzv++;
+          fmq.lookAt(gbt.position);
+          fnv.lookAt(gbt.position);
+          if (dzv >= dly) {
+            dkk = null;
+            fmq.children[0].material.color.setHex(fcg);
+            fnv.children[0].material.color.setHex(fcg);
+            fnv.pzd = null;
+            fmq.pzd = null;
+            fmq = null;
+            fnv = null;
+            var xbe = mnj();
+            if (xbe > 0) {
+              ukm(zna + "(" + xbe + "/10) left");
+            } else {
+              ukm(pcf);
+              myl.classList.remove("hidden");
+              fhu = false;
+              myl.click();
+              hsu++;
+              setTimeout(() => {
+                pdu();
+              }, 10000);
+            }
+          }
+        }
+        if (dkk == nax.mxm) {
+          if (fwk != undefined) {
+            ush(fwk, false);
+          }
+          var xcd = inc[dzv],
+            xdw = iom[dzv],
+            xfs = iqp[dzv],
+            xcw = ist[dzv],
+            xen = ivu[dzv],
+            xgj = jay[dzv];
+          dzv++;
+          var xhr = new THREE.Vector3(xcd, xdw, xfs),
+            xiv = new THREE.Vector3(xcw, xen, xgj);
+          dam.position.add(xhr);
+          crw.target.add(xiv);
+          dam.lookAt(crw.target);
+          if (dzv >= dly) {
+            dkk = nax.muc;
+            dzv = 0;
+            var xkk = new Audio("../files/ekm.mp3");
+            xkk.volume = 0.5;
+            xkk.play();
+            if (params.Mode == nwe && fzt.name == omi[hsu - 6]) {
+              uhm("Well done! " + oby[hsu - 6]);
+              setTimeout(() => {
+                hsu++;
+                pdu();
+              }, 26000);
+            }
+          }
+        }
+        if (dkk == nax.muc) {
+          var xcd = jhw[dzv] - jhw[dzv - 1];
+          var xfs = jmt[dzv] - jmt[dzv - 1];
+          dzv++;
+          var xhr = new THREE.Vector3(xcd, 0.0, xfs);
+          dam.position.add(xhr);
+          dam.lookAt(crw.target);
+          if (dzv >= dnw) {
+            ctn.add(fqt);
+            fqt.position.x = crw.target.x;
+            fqt.position.y = crw.target.y + 0.5;
+            fqt.position.z = crw.target.z;
+            fqt.lookAt(gjm[hsu - 6].center);
+            crw.enabled = true;
+            dkk = null;
+            dzv = 0;
+            mep(fld);
+          }
+        }
+        qrm();
+        ybu();
+        lar.render();
+      }
+      function qrm() {
+        for (var obj of ctn.children) {
+          if (obj.apptype == nsr.nmk) {
+            var rch = obj.position.distanceTo(dam.position);
+            var rdy =
+              obj.material.color.g == 0.0 && obj.material.color.b == 0.0;
+            var kuq = Math.sqrt(2 * rch) / 3;
+            if (rch > hfy && obj.ijz != din) {
+              continue;
+            }
+            if ((kuq < 1 && kuq > 0.5) || (!rdy && kuq > 1)) {
+              obj.scale.setScalar(kuq * obj.ijz);
+            }
+          }
+        }
+      }
+      function xmj() {
+        for (var xny of ctn.children.filter(
+          (obj) => obj.apptype == nsr.nmk && !ems.includes(obj)
+        )) {
+          ctn.remove(xny);
+        }
+      }
+      function xpq(xrl) {
+        ems = [];
+        for (var xst of far) {
+          if (xst.position.distanceTo(xrl) < hbn) {
+            var xtt = tko(xst.data);
+            ems.push(xtt);
+          }
+        }
+        hcz.copy(xrl);
+      }
+      function xvn(xwl, xxu) {
+        if (hcz.distanceTo(xwl) > hbn / 2) {
+          xpq(xwl);
+        }
+        for (var xzp of ems) {
+          if (xxu && xzp.position.distanceTo(xwl) < hfy) {
+            ctn.add(xzp);
+            if (xzp.name == fur) {
+              fwk = xzp;
+              ush(xzp, true);
+              fur = undefined;
+            }
+          }
+          if (!xxu && xzp.position.distanceTo(xwl) > hfy) {
+            ctn.remove(xzp);
+          }
+        }
+        for (var gnv of ttt) {
+          if (xxu && params.showDensity && gnv.position.distanceTo(xwl) < 500) {
+            ctn.add(gnv);
+          }
+          if (!xxu && gnv.position.distanceTo(xwl) > 500) {
+            ctn.remove(gnv);
+          }
+        }
+        for (var yar of gjm) {
+          if (his > xwl.distanceTo(yar.position)) {
+            ctn.add(yar);
+          } else {
+            ctn.remove(yar);
+          }
+        }
+        console.log("Scene objects " + ctn.children.length);
+      }
+      function ybu() {
+        ctn.traverse(ycr);
+        kva.render();
+        ctn.traverse(ydo);
+      }
+      function ycr(ybg) {
+        if (!ybg.shine) {
+          khm[ybg.uuid] = ybg.material;
+          ybg.material = khb;
+        }
+      }
+      function ydo(yay) {
+        if (khm[yay.uuid]) {
+          yay.material = khm[yay.uuid];
+          delete khm[yay.uuid];
+        }
+      }
+    </script>
+  </body>
 </html>
-
