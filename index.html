@@ -472,7 +472,7 @@
         return [0.0, 0.9, 0.0];
       }
       function ngy() {
-        fetch("../files/wub.txt")
+        fetch("./files/wub.txt")
           .then((res) => res.text())
           .then((text) => {
             for (let colour of text.split("\n")) {
@@ -488,7 +488,7 @@
           .catch((e) => console.error(e));
       }
       function nlx() {
-        fetch("../files/efs.txt")
+        fetch("./files/efs.txt")
           .then((res) => res.text())
           .then((text) => {
             for (let nnu of text.split("\n")) {
@@ -502,7 +502,7 @@
           .catch((e) => console.error(e));
       }
       function oao() {
-        fetch("../files/baz.txt")
+        fetch("./files/baz.txt")
           .then((res) => res.text())
           .then((text) => {
             for (let otg of text.split("\n")) {
@@ -827,7 +827,7 @@
         vrj();
         var urls = [];
         for (var i = 1; i <= 12; i++) {
-          urls.push("../files/ydf" + i + ".txt");
+          urls.push("./files/ydf" + i + ".txt");
         }
         const requests = urls.map((url) => fetch(url));
         await Promise.all(requests)
@@ -1094,7 +1094,7 @@
         return label;
       }
       function vrj() {
-        fetch("../files/guz.txt")
+        fetch("./files/guz.txt")
           .then((res) => res.text())
           .then((text) => {
             for (let vst of text.split("\n")) {
@@ -1109,7 +1109,7 @@
             }
           })
           .catch((e) => console.error(e));
-        fetch("../files/psu.txt")
+        fetch("./files/psu.txt")
           .then((res) => res.text())
           .then((text) => {
             var vxv = [];
@@ -1181,7 +1181,7 @@
             dzv = 0;
             if (params.Mode == nwe && fwk.name == oxg[hsu - 1]) {
               uhm("Well done! " + oru[hsu - 1]);
-              var xkk = new Audio("../files/paz.mp3");
+              var xkk = new Audio("./files/paz.mp3");
               xkk.volume = 0.5;
               xkk.play();
               setTimeout(() => {
@@ -1239,7 +1239,7 @@
           if (dzv >= dly) {
             dkk = nax.muc;
             dzv = 0;
-            var xkk = new Audio("../files/ekm.mp3");
+            var xkk = new Audio("./files/ekm.mp3");
             xkk.volume = 0.5;
             xkk.play();
             if (params.Mode == nwe && fzt.name == omi[hsu - 6]) {
